@@ -45,10 +45,18 @@ jobs:
           registryPassword: ${{ secrets.GHCR_TOKEN }}
 
       - name: Set service URLs on BFF Container App
+        env:
+          DOC_URL: ${{ secrets.DOCUMENT_SERVICE_URL }}
+          SRCH_URL: ${{ secrets.SEARCH_SERVICE_URL }}
         run: |
-          az containerapp update \
-            --name docvault-bff \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --set-env-vars \
-              DOCUMENT_SERVICE_URL=${{ secrets.DOCUMENT_SERVICE_URL }} \
-              SEARCH_SERVICE_URL=${{ secrets.SEARCH_SERVICE_URL }}
+          if [ -n "$DOC_URL" ] && [ -n "$SRCH_URL" ]; then
+            az containerapp update \
+              --name docvault-bff \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --set-env-vars \
+                DOCUMENT_SERVICE_URL="$DOC_URL" \
+                SEARCH_SERVICE_URL="$SRCH_URL"
+            echo "Service URLs updated on BFF Container App"
+          else
+            echo "::warning::DOCUMENT_SERVICE_URL or SEARCH_SERVICE_URL secret not set — skipping env var update"
+          fi
