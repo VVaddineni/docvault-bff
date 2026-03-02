@@ -85,7 +85,8 @@ app.use((err, req, res, _next) => {
 
 app.listen(PORT, () => {
   logger.info(`DocVault BFF running on port ${PORT}`);
-  logger.info(`APIM endpoint: ${process.env.APIM_ENDPOINT}`);
+  logger.info(`Document Service: ${process.env.DOCUMENT_SERVICE_URL || 'http://localhost:8080'}`);
+  logger.info(`Search Service:   ${process.env.SEARCH_SERVICE_URL   || 'http://localhost:8081'}`);
 });
 
 module.exports = app;
