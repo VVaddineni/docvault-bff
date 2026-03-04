@@ -43,6 +43,7 @@ jobs:
           registryUrl: ghcr.io
           registryUsername: ${{ github.actor }}
           registryPassword: ${{ secrets.GHCR_TOKEN }}
+          targetPort: 4000
 
       - name: Set service URLs on BFF Container App
         env:
