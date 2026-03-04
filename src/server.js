@@ -75,12 +75,22 @@ app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {
   logger.error(`[${req.correlationId}] ${err.message}`, { stack: err.stack });
+  if (res.headersSent) return; // client disconnected — can't send response
   const status = err.status || err.response?.status || 500;
   res.status(status).json({
     error:         err.code || 'INTERNAL_ERROR',
     message:       err.message || 'An unexpected error occurred',
     correlationId: req.correlationId,
   });
+});
+
+// ── Process-level safety nets ────────────────────────────────────────────────
+// Prevent a single bad request from crashing the entire process.
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception — process will continue', { message: err.message, stack: err.stack });
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection', { reason: String(reason) });
 });
 
 app.listen(PORT, () => {
