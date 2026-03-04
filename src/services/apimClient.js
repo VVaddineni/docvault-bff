@@ -49,6 +49,9 @@ function makeClient(baseURL, name) {
       const status = err.response?.status;
       logger.warn(`[${name} ✗] ${status ?? 'ERR'} ${cfg?.url}: ${err.message}`);
 
+      // If cfg is missing this is a re-thrown normalised error — pass it through
+      if (!cfg) throw err;
+
       // Retry on 503 (service temporarily unavailable)
       cfg._retryCount = cfg._retryCount || 0;
       if (status === 503 && cfg._retryCount < 3) {
