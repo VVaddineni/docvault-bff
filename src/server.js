@@ -25,6 +25,9 @@ const healthRouter      = require('./routes/health');
 const app  = express();
 const PORT = process.env.PORT || 4000;
 
+// Trust ACA's load balancer so express-rate-limit can read X-Forwarded-For
+app.set('trust proxy', 1);
+
 // ── Security middleware ────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: false,  // React handles its own CSP
