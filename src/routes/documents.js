@@ -10,6 +10,7 @@ const express  = require('express');
 const multer   = require('multer');
 const FormData = require('form-data');
 const asyncH   = require('express-async-handler');
+const axios    = require('axios');
 const apim     = require('../services/apimClient');
 const logger   = require('../utils/logger');
 
@@ -74,6 +75,31 @@ router.post('/upload', upload.single('file'), asyncH(async (req, res) => {
 
   const data = await apim.upload('/documents/v1/documents', form, req.correlationId);
   res.status(201).json(data);
+}));
+
+// ── GET /api/documents/:id/file — stream document directly to browser ────────
+router.get('/:id/file', asyncH(async (req, res) => {
+  const data = await apim.get(
+    `/documents/v1/documents/${req.params.id}/download`,
+    {},
+    req.correlationId
+  );
+
+  if (data.status === 'rehydrating') {
+    return res.status(202).json({ error: 'Document is being rehydrated from Archive. Try again later.' });
+  }
+  if (!data.sasUrl) {
+    return res.status(404).json({ error: 'Download URL not available' });
+  }
+
+  logger.info(`[Documents] Streaming file: docId=${req.params.id} [${req.correlationId}]`);
+  const fileRes = await axios.get(data.sasUrl, { responseType: 'stream' });
+  res.setHeader('Content-Type', fileRes.headers['content-type'] || 'application/octet-stream');
+  res.setHeader('Content-Disposition', fileRes.headers['content-disposition'] || 'attachment');
+  if (fileRes.headers['content-length']) {
+    res.setHeader('Content-Length', fileRes.headers['content-length']);
+  }
+  fileRes.data.pipe(res);
 }));
 
 // ── GET /api/documents/:id/download — SAS URL or rehydration status ───────
